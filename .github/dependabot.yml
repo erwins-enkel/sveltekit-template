@@ -1,0 +1,98 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 5
+    labels: ['dependencies']
+    groups:
+      # Group minor + patch updates per ecosystem so PRs aren't 50/week.
+      # Each group has a sibling `*-majors` group because of dependabot-core#14202:
+      # deps matched by a group's patterns are marked "handled" regardless of
+      # update-types, so major updates would otherwise be silently dropped.
+      sveltekit:
+        patterns: ['svelte*', '@sveltejs/*', 'vite*', '@tailwindcss/*', 'tailwindcss']
+        update-types: ['minor', 'patch']
+      sveltekit-majors:
+        patterns: ['svelte*', '@sveltejs/*', 'vite*', '@tailwindcss/*', 'tailwindcss']
+        update-types: ['major']
+      shadcn:
+        patterns:
+          [
+            'bits-ui',
+            '@lucide/*',
+            'lucide-svelte',
+            '@internationalized/date',
+            'svelte-sonner',
+            'mode-watcher',
+            'tw-animate-css'
+          ]
+        update-types: ['minor', 'patch']
+      shadcn-majors:
+        patterns:
+          [
+            'bits-ui',
+            '@lucide/*',
+            'lucide-svelte',
+            '@internationalized/date',
+            'svelte-sonner',
+            'mode-watcher',
+            'tw-animate-css'
+          ]
+        update-types: ['major']
+      drizzle:
+        patterns: ['drizzle-*', '@neondatabase/*']
+        update-types: ['minor', 'patch']
+      drizzle-majors:
+        patterns: ['drizzle-*', '@neondatabase/*']
+        update-types: ['major']
+      lint:
+        patterns:
+          [
+            'eslint*',
+            '@eslint/*',
+            'prettier*',
+            'typescript-eslint',
+            'globals',
+            'husky',
+            'lint-staged'
+          ]
+        update-types: ['minor', 'patch']
+      lint-majors:
+        patterns:
+          [
+            'eslint*',
+            '@eslint/*',
+            'prettier*',
+            'typescript-eslint',
+            'globals',
+            'husky',
+            'lint-staged'
+          ]
+        update-types: ['major']
+      test:
+        patterns: ['vitest', '@vitest/*']
+        update-types: ['minor', 'patch']
+      test-majors:
+        patterns: ['vitest', '@vitest/*']
+        update-types: ['major']
+    versioning-strategy: 'increase'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 3
+    labels: ['dependencies', 'ci']
+    commit-message:
+      prefix: 'chore(actions)'
