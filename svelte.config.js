@@ -18,6 +18,17 @@ const config = {
 		}),
 		alias: {
 			'$lib/*': 'src/lib/*'
+		},
+
+		// Required for `src/instrumentation.server.ts` (Sentry server init) to be
+		// loaded — SvelteKit 2.31+ / @sentry/sveltekit 10.8+.
+		experimental: {
+			instrumentation: {
+				server: true
+			},
+			tracing: {
+				server: true
+			}
 		}
 	}
 };
