@@ -23,6 +23,10 @@ changes.
 - **Vitest** for tests. Co-locate `*.test.ts` next to the source.
 - **ESLint 9 + Prettier 3** are required to pass before any commit. The
   Husky pre-commit hook enforces this.
+- **Fallow** for dead-code / complexity / duplication audit. CI runs
+  `fallow audit` on every PR; locally `bunx fallow` for the full report.
+  Config at `.fallowrc.json` — tune `entry` and `ignoreDependencies` to
+  your project's actual reachable surface.
 
 ## Conventions
 
