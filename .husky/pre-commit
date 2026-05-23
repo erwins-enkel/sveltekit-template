@@ -1,0 +1,8 @@
+# 1. Prettier + ESLint on staged files (fast, auto-fixes formatting).
+bunx lint-staged
+
+# 2. svelte-check on the whole project. Mirrors `bun run check` so a typecheck
+#    regression blocks the commit before it ever reaches CI. `vitest`/`build`
+#    stay out of the pre-commit path — too slow per commit; CI catches those.
+#    --fail-on-warnings=false keeps warnings non-blocking (CI policy matches).
+bunx svelte-kit sync && bunx svelte-check --tsconfig ./tsconfig.json --fail-on-warnings=false
