@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs for the same PR / branch when a new commit lands.
+# Uses only safe internal context vars (workflow + ref), no untrusted input.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    # Dummy DATABASE_URL: the build only inspects the URL string format,
+    # it never opens a real connection. Real values come from Vercel at
+    # deploy time. Keep this in sync with the format Drizzle / Neon expect.
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        # No `packageManager` field in package.json — track latest stable Bun.
+        # setup-bun caches the install + ~/.bun/install/cache by default.
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint (prettier + eslint)
+        run: bun run lint
+
+      - name: Typecheck (svelte-check)
+        run: bun run check
+
+      - name: Unit tests (vitest)
+        run: bun run test
+
+      - name: Build (vite + adapter-vercel)
+        run: bun run build
