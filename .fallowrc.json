@@ -1,0 +1,51 @@
+{
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"entry": [
+		"src/routes/**/+*.{ts,svelte,js}",
+		"src/hooks.server.ts",
+		"src/hooks.client.ts",
+		"src/app.d.ts",
+		"src/app.html",
+		"src/app.css",
+		"src/lib/components/ui/**",
+		"src/lib/index.ts",
+		"src/lib/server/db/index.ts",
+		"src/lib/utils.ts",
+		"vite.config.ts",
+		"svelte.config.js",
+		"drizzle.config.ts",
+		"vitest.config.ts",
+		"vitest.setup.ts",
+		"eslint.config.js",
+		"scripts/**/*.ts"
+	],
+	"ignoreDependencies": [
+		"tsx",
+		"husky",
+		"lint-staged",
+		"prettier-plugin-svelte",
+		"prettier-plugin-tailwindcss",
+		"eslint-plugin-svelte",
+		"eslint-config-prettier",
+		"@eslint/js",
+		"typescript-eslint",
+		"globals",
+		"@vitest/coverage-v8",
+		"tw-animate-css",
+		"@tailwindcss/vite",
+		"drizzle-kit",
+		"mode-watcher"
+	],
+	"duplicates": {
+		"ignore": ["**/.svelte-kit/**", "**/drizzle/**", "**/src/lib/components/ui/**", "**/scripts/**"]
+	},
+	"rules": {
+		"duplicate-exports": "off"
+	},
+	"health": {
+		"maxCyclomatic": 20,
+		"maxCognitive": 15,
+		"maxCrap": 1000,
+		"ignore": ["**/scripts/**", "**/*.test.ts", "**/*.spec.ts"]
+	}
+}
