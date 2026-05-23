@@ -6,6 +6,12 @@ on:
   push:
     branches: [main]
 
+# Restrict the workflow token. Without this block, Dependabot PRs get an
+# empty GITHUB_TOKEN and actions/checkout fails authentication.
+permissions:
+  contents: read
+  pull-requests: read
+
 # Cancel in-progress runs for the same PR / branch when a new commit lands.
 # Uses only safe internal context vars (workflow + ref), no untrusted input.
 concurrency:
