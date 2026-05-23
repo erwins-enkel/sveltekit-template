@@ -60,10 +60,12 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.1.0",
+		"@sentry/sveltekit": "^10.53.1",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.0.0",
 		"drizzle-orm": "^0.45.0",
 		"tailwind-merge": "^3.0.0",
-		"tailwind-variants": "^3.2.2"
+		"tailwind-variants": "^3.2.2",
+		"valibot": "^1.4.0"
 	}
 }

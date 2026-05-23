@@ -4,6 +4,7 @@
 		"src/routes/**/+*.{ts,svelte,js}",
 		"src/hooks.server.ts",
 		"src/hooks.client.ts",
+		"src/instrumentation.server.ts",
 		"src/app.d.ts",
 		"src/app.html",
 		"src/app.css",
