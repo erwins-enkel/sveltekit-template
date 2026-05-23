@@ -108,84 +108,33 @@ vercel deploy --prod
 **Smoke test:** log out + log back in via `/login` to verify the OAuth
 flow. Then delete the previous client secret entry in Azure Portal.
 
-### 2.4 Anthropic API key — **Skip if not used**
+### 2.4 Resend API key — **Skip if not used**
 
-> Applies if you've added `ANTHROPIC_API_KEY` to your `.env.example`.
+> Applies if you've added `RESEND_API_KEY` to your `.env.example`.
+
+> **No overlap window.** A revoked Resend key stops working immediately —
+> create the new key before removing the old one.
 
 ```text
-1. console.anthropic.com → Settings → API Keys → Create Key
-2. Name: "<project>-prod-YYYY-MM-DD"
-3. Copy the value
+1. resend.com → API Keys → Create API Key
+2. Name: "<project>-prod-YYYY-MM-DD"; Permission: Sending access
+3. Copy the value (only shown once)
 ```
 
 ```bash
 for ENV in production preview development; do
-  vercel env rm ANTHROPIC_API_KEY "$ENV" --yes
-  vercel env add ANTHROPIC_API_KEY "$ENV" --value "<paste>" --yes
+  vercel env rm RESEND_API_KEY "$ENV" --yes
+  vercel env add RESEND_API_KEY "$ENV" --value "<paste>" --yes
 done
 vercel deploy --prod
 ```
 
-**Smoke test:** trigger whatever code path calls Claude and verify the
-response. Then revoke the old key in the Anthropic console.
+**Smoke test:** trigger a code path that sends mail and confirm delivery in
+the Resend dashboard logs. Then revoke the old key in Resend.
 
-### 2.5 HubSpot API key — **Skip if not used**
+### 2.5 Sentry DSN / auth token — **Skip if not used**
 
-> Applies if you've added `HUBSPOT_API_KEY` to your `.env.example`.
-
-> **No overlap window.** HubSpot revokes the previous token the moment you
-> rotate. Have the new value ready before you click rotate.
-
-```text
-1. HubSpot → Settings → Integrations → Private Apps → <your app>
-2. "Auth" tab → click "Rotate access token"
-3. Copy the new token immediately
-```
-
-```bash
-for ENV in production preview development; do
-  vercel env rm HUBSPOT_API_KEY "$ENV" --yes
-  vercel env add HUBSPOT_API_KEY "$ENV" --value "<paste>" --yes
-done
-vercel deploy --prod
-```
-
-**Smoke test:** trigger a code path that performs a HubSpot contact lookup
-and a write (engagement, note, etc.). Both must succeed.
-
-### 2.6 Inngest event + signing keys — **Skip if not used**
-
-> Applies if you've added `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` to
-> your `.env.example`.
-
-Rotate together — they're independent but used as a pair by the same Inngest
-app.
-
-```text
-1. app.inngest.com → app "<your-app>" → Manage
-2. Event Keys → Create new key → label "prod-YYYY-MM-DD"
-3. Signing Keys → Rotate
-4. Copy both values
-```
-
-```bash
-for ENV in production preview development; do
-  vercel env rm INNGEST_EVENT_KEY "$ENV" --yes
-  vercel env add INNGEST_EVENT_KEY "$ENV" --value "<paste-event-key>" --yes
-  vercel env rm INNGEST_SIGNING_KEY "$ENV" --yes
-  vercel env add INNGEST_SIGNING_KEY "$ENV" --value "<paste-signing-key>" --yes
-done
-vercel deploy --prod
-```
-
-**Smoke test:** trigger an event. Inngest dashboard must show the run pick
-up and complete. If signing verification fails, `/api/inngest` returns 401
-and runs stall in "queued". Then delete the old event key in the Inngest
-dashboard.
-
-### 2.7 Sentry DSN / auth token — **Skip if not used**
-
-> Applies if you've added Sentry to your project.
+> Applies if you've set `PUBLIC_SENTRY_DSN` / `SENTRY_AUTH_TOKEN`.
 
 The **DSN** is a public client-side identifier; rotation isn't required for
 secrecy but you'll change it when you move to a new Sentry project. The
@@ -217,11 +166,9 @@ ex-contractor with access, malicious dependency):
    is not enough on its own (the provider would still honour the old value).
 3. **Audit usage** since the earliest plausible leak time — check whichever
    of these you use:
-   - **Anthropic:** console.anthropic.com → Usage.
-   - **HubSpot:** Settings → Integrations → Private Apps → <app> → Logs.
-   - **Inngest:** dashboard → Events feed.
    - **Neon:** dashboard → SQL Editor → Postgres logs / connection history.
    - **Azure AD:** Portal → Sign-in logs → filter by the app's client ID.
+   - **Resend:** dashboard → Logs (delivery + API activity).
    - **Sentry:** Audit Log under organisation settings.
 4. **Document** the incident in `docs/incidents/YYYY-MM-DD-<short-name>.md`:
    timeline, blast radius, what was rotated, follow-up actions.
@@ -259,6 +206,6 @@ Add a recurring calendar item for the on-call rotation owner:
 Append one line per rotation. Keep this section in chronological order,
 oldest first.
 
-| Date      | Secret              | Rotated by | Reason    | Notes                    |
-| --------- | ------------------- | ---------- | --------- | ------------------------ |
-| _example_ | `ANTHROPIC_API_KEY` | _name_     | _cadence_ | _smoke-tested run #1234_ |
+| Date      | Secret           | Rotated by | Reason    | Notes                     |
+| --------- | ---------------- | ---------- | --------- | ------------------------- |
+| _example_ | `SESSION_SECRET` | _name_     | _cadence_ | _all sessions logged out_ |

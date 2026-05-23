@@ -10,6 +10,12 @@ new projects get the same foundation on day one.
   Drizzle ORM with the Neon HTTP driver, `@sveltejs/adapter-vercel` targeting
   Node 22 in region `fra1`.
 - **Tooling:** Bun for local install + scripts, ESLint 9 + Prettier 3 + Husky 9 with lint-staged 16, Vitest with v8 coverage.
+- **Observability:** `@sentry/sveltekit` wired on server + client — a no-op
+  until you set `PUBLIC_SENTRY_DSN`, so it never gets in the way locally.
+- **Validation:** Valibot, already enforcing a fail-fast env contract in
+  `src/lib/server/env.ts`. Reuse it for form input and API payloads.
+- **Error page:** a default `src/routes/+error.svelte` so thrown errors render
+  a real page instead of the framework fallback.
 - **CI:** `.github/workflows/ci.yml` runs lint → typecheck → test → build on
   every PR and push to `main`, with concurrency cancellation.
 - **Releases:** [release-please](https://github.com/googleapis/release-please)
@@ -48,25 +54,32 @@ After clicking **Use this template** on GitHub, do this once per derived project
      "Skip if not used" that doesn't apply.
    - In `.github/dependabot.yml`, delete the grouping rules for libraries you
      never installed (otherwise they're harmless but noisy).
-8. **Wire up your auth provider** in `src/hooks.server.ts` — it currently
-   pass-throughs every request.
-9. **Populate `scripts/verify-restore.ts`** — the `TABLES` array is empty by
-   design; add one entry per table you want the backup-restore drill to verify.
+8. **Add auth if you need it** — BetterAuth is the blessed path; see
+   [Adding integrations](#adding-integrations) below. `src/hooks.server.ts`
+   currently pass-throughs every request (after Sentry).
+9. **Set `PUBLIC_SENTRY_DSN`** (Production + Preview) if you want error
+   tracking — otherwise Sentry stays a no-op.
+10. **Populate `scripts/verify-restore.ts`** — the `TABLES` array is empty by
+    design; add one entry per table you want the backup-restore drill to verify.
 
 ## Tech stack
 
-| Layer           | Choice                                             |
-| --------------- | -------------------------------------------------- |
-| Runtime         | Node 22 (Vercel)                                   |
-| Package manager | Bun (local dev)                                    |
-| Framework       | SvelteKit 5 + TypeScript                           |
-| Styling         | Tailwind CSS 4.1 + shadcn-svelte                   |
-| Database        | Neon Postgres (via Vercel Marketplace integration) |
-| ORM             | Drizzle + `@neondatabase/serverless`               |
-| Hosting         | Vercel (region `fra1` by default)                  |
-| Lint / format   | ESLint 9 + Prettier 3                              |
-| Git hooks       | Husky + lint-staged                                |
-| Tests           | Vitest                                             |
+| Layer                   | Choice                                             |
+| ----------------------- | -------------------------------------------------- |
+| Runtime                 | Node 22 (Vercel)                                   |
+| Package manager         | Bun (local dev)                                    |
+| Framework               | SvelteKit 5 + TypeScript                           |
+| Styling                 | Tailwind CSS 4.1 + shadcn-svelte                   |
+| Database                | Neon Postgres (via Vercel Marketplace integration) |
+| ORM                     | Drizzle + `@neondatabase/serverless`               |
+| Validation              | Valibot                                            |
+| Observability           | Sentry (`@sentry/sveltekit`, optional)             |
+| Hosting                 | Vercel (region `fra1` by default)                  |
+| Lint / format           | ESLint 9 + Prettier 3                              |
+| Git hooks               | Husky + lint-staged                                |
+| Tests                   | Vitest                                             |
+| Auth (add when needed)  | BetterAuth + Drizzle adapter                       |
+| Email (add when needed) | Resend                                             |
 
 ## Local setup
 
@@ -82,6 +95,90 @@ bun run db:migrate
 
 # 4. Start the dev server (http://localhost:5173)
 bun run dev
+```
+
+## Adding integrations
+
+Sentry is pre-wired; auth and email are documented here as the blessed paths
+but **not** scaffolded — add them when a project actually needs them. Check the
+current API with the Context7 MCP before pasting; these libraries move fast.
+
+### Error tracking (Sentry — already wired)
+
+Server init lives in `src/instrumentation.server.ts`, client init in
+`src/hooks.client.ts`, and `sentryHandle()` wraps `src/hooks.server.ts`. It's a
+no-op until a DSN is present. To turn it on:
+
+```bash
+# Set the DSN (Production + Preview, and .env.local for dev)
+PUBLIC_SENTRY_DSN="https://...@oXXXX.ingest.de.sentry.io/XXXX"
+```
+
+To upload source maps on deploy, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`,
+and `SENTRY_PROJECT` — the Vite plugin only runs when the token is present
+(`vite.config.ts`), so local/CI builds stay clean.
+
+### Adding authentication (BetterAuth)
+
+```bash
+bun add better-auth
+```
+
+```ts
+// src/lib/server/auth.ts
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { getRequestEvent } from '$app/server';
+import { db } from '$lib/server/db';
+
+export const auth = betterAuth({
+	database: drizzleAdapter(db, { provider: 'pg' }),
+	emailAndPassword: { enabled: true },
+	// `sveltekitCookies` must be the LAST plugin.
+	plugins: [sveltekitCookies(getRequestEvent)]
+});
+```
+
+```ts
+// src/hooks.server.ts — replace the no-op handleApp with the BetterAuth handler
+import { svelteKitHandler } from 'better-auth/svelte-kit';
+import { building } from '$app/environment';
+import { auth } from '$lib/server/auth';
+
+const handleApp: Handle = ({ event, resolve }) =>
+	svelteKitHandler({ event, resolve, auth, building });
+```
+
+Then generate + apply the auth tables, and set the secret:
+
+```bash
+bunx @better-auth/cli generate   # writes auth tables into your Drizzle schema
+bun run db:generate && bun run db:migrate
+# .env: BETTER_AUTH_SECRET=$(openssl rand -hex 32), BETTER_AUTH_URL=<app url>
+```
+
+### Adding email (Resend)
+
+```bash
+bun add resend
+```
+
+```ts
+// src/lib/server/email.ts
+import { Resend } from 'resend';
+import { env } from '$env/dynamic/private';
+
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+
+export async function sendEmail(opts: { to: string; subject: string; html: string }) {
+	if (!resend) {
+		// No key configured — log and no-op so dev/CI don't fail.
+		console.warn('RESEND_API_KEY unset; skipping email:', opts.subject);
+		return;
+	}
+	await resend.emails.send({ from: 'you@yourdomain.com', ...opts });
+}
 ```
 
 ## Commands
@@ -197,15 +294,20 @@ src/
 ├── app.css                  # Tailwind + shadcn theme variables
 ├── app.d.ts
 ├── app.html
-├── hooks.server.ts          # Pass-through; wire your auth provider here
+├── instrumentation.server.ts # Sentry server init (no-op without a DSN)
+├── hooks.server.ts          # sentryHandle + pass-through; add auth here
+├── hooks.client.ts          # Sentry client init
 ├── lib/
 │   ├── components/ui/       # shadcn-svelte components (Button installed)
-│   ├── server/db/
-│   │   ├── index.ts         # Drizzle client (Neon HTTP driver)
-│   │   └── schema.ts        # Empty — add your tables here
+│   ├── server/
+│   │   ├── env.ts           # Valibot-validated env (fail-fast at load)
+│   │   └── db/
+│   │       ├── index.ts     # Drizzle client (Neon HTTP driver)
+│   │       └── schema.ts    # Empty — add your tables here
 │   └── utils.ts             # cn() helper + shadcn type helpers
 └── routes/
     ├── +layout.svelte
+    ├── +error.svelte        # Default error page
     └── +page.svelte         # Placeholder home page
 drizzle/                     # Generated migrations land here
 docs/runbooks/               # Secret rotation + Neon backup-restore

@@ -20,6 +20,17 @@ changes.
   intentionally excluded from Prettier + ESLint.
 - **Drizzle ORM + Neon HTTP driver** for the database. Schema in
   `src/lib/server/db/schema.ts`; migrations generated into `drizzle/`.
+- **Valibot** for runtime validation (env, form input, API payloads). It
+  already backs `src/lib/server/env.ts`. Don't reach for Zod — pick one, and
+  this template picked Valibot.
+- **Sentry** (`@sentry/sveltekit`) for error tracking. Init lives in
+  `src/instrumentation.server.ts` + `src/hooks.client.ts`; it's a no-op until
+  `PUBLIC_SENTRY_DSN` is set. Don't add a second error-tracking SDK.
+- **BetterAuth** (`better-auth` + Drizzle adapter) is the standard auth — add
+  it when a project needs login (see README → "Adding authentication"). Don't
+  introduce Lucia/Auth.js/custom sessions.
+- **Resend** is the standard transactional email — add it when a project needs
+  to send mail (see README → "Adding email").
 - **Vitest** for tests. Co-locate `*.test.ts` next to the source.
 - **ESLint 9 + Prettier 3** are required to pass before any commit. The
   Husky pre-commit hook enforces this.
@@ -40,8 +51,9 @@ changes.
   bundle anything under that path into the client. Database access, secret
   reads, and provider SDK calls all live there.
 - **Env vars via `$env/dynamic/private`** in server code, never via
-  `process.env` directly. Throw at module load if a required var is missing
-  — fail fast.
+  `process.env` directly. Required server vars belong in
+  `src/lib/server/env.ts`, which validates them with Valibot at module load
+  and throws — fail fast. Add new required vars to that schema.
 - **No `console.log` in committed code.** Use a real logger if you need
   structured output; remove debug prints before opening the PR.
 - **All user-facing strings stay in one language** (decide per project).
