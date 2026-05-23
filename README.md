@@ -120,6 +120,21 @@ Concurrency cancels superseded runs on the same branch/PR. The Husky
 pre-commit hook (`.husky/pre-commit`) runs `lint-staged` + `svelte-check` so
 typecheck regressions are caught locally before they hit CI.
 
+**Fallow** runs on every PR (`fallow audit --fail-on-issues`) and fails the
+check if the PR introduces new dead code, complexity violations, or unlisted
+dependencies. Inherited issues don't block — only the delta matters. Run
+locally:
+
+```bash
+bunx fallow            # full report
+bunx fallow fix        # auto-fix the safe stuff
+bunx fallow audit      # same gate as CI
+```
+
+Config: [`.fallowrc.json`](./.fallowrc.json). Tune `entry`,
+`ignoreDependencies`, and `health.*` thresholds for your project's actual
+shape — the defaults assume a typical SvelteKit + Vercel + Drizzle app.
+
 Vercel preview deployments are handled by Vercel's own GitHub integration —
 not duplicated here.
 
