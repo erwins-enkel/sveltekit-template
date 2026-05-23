@@ -62,7 +62,7 @@
 		"@neondatabase/serverless": "^1.1.0",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.0.0",
-		"drizzle-orm": "^0.45.0",
+		"drizzle-orm": "^0.45.2",
 		"tailwind-merge": "^3.0.0",
 		"tailwind-variants": "^3.2.2"
 	}
