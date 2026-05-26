@@ -66,6 +66,7 @@ changes.
 - No `users` + `user_profiles` split unless the profile has genuinely different ownership lifecycle. When in doubt, one `users` table.
 - Always add `created_at` (default `now()`) and `updated_at` (default `now()`, onUpdate) to every table. Drizzle provides `timestamp` helpers for this.
 - Name foreign key columns `{referenced_table}_id` and their indexes `idx_{table}_{column}`.
+- Design schema in markdown first — write table names, columns, and relationships by hand before generating Drizzle code. Have AI review for gaps, not author from scratch.
 
 ### Type organization
 
@@ -76,7 +77,7 @@ changes.
 
 ### Validation patterns
 
-- Valibot is the only validation library. Don't introduce Zod, Yup, or Joi.
+- Valibot is the only validation library — it complies with Standard Schema, so any replacement must too. Don't mix libraries or introduce Zod, Yup, or Joi.
 - `src/lib/server/env.ts` validates environment variables at module load — add new vars to its schema.
 - For form validation, create a Valibot schema in `src/lib/types/{domain}.ts` alongside the TypeScript types, and use it with `superForm` or `$form` actions.
 - For API payload validation (in `+server.ts` routes), import the same Valibot schemas from `src/lib/types/`. Never validate inline with manual `typeof` checks.
@@ -92,7 +93,7 @@ changes.
 
 ### Auth layout
 
-- BetterAuth is the standard auth provider. Add it when the project needs login (see README).
+- Design data ownership into every schema from day one — add `user_id` FKs and auth scope to tables even before login is wired. BetterAuth is the standard auth provider; add it when the project needs login (see README).
 - When you add auth, create these routes under `(public)/`: `/login`, `/signup`, `/forgot-password`.
 - Create `(authenticated)/+layout.svelte` that checks `locals.user` and redirects to `/login` if missing.
 - Don't introduce Lucia, Auth.js, or custom session management.
