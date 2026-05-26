@@ -59,6 +59,64 @@ changes.
 - **All user-facing strings stay in one language** (decide per project).
   Logs and identifiers stay English regardless.
 
+### Schema conventions
+
+- No duplicate or near-duplicate tables — if two tables share 80%+ columns, they should be one table with a type/status discriminator, not separate tables.
+- No flag columns (`is_active`, `is_deleted`) — use status enums instead. Soft-delete is `status = 'archived'`, not a boolean.
+- No `users` + `user_profiles` split unless the profile has genuinely different ownership lifecycle. When in doubt, one `users` table.
+- Always add `created_at` (default `now()`) and `updated_at` (default `now()`, onUpdate) to every table. Drizzle provides `timestamp` helpers for this.
+- Name foreign key columns `{referenced_table}_id` and their indexes `idx_{table}_{column}`.
+- Design schema in markdown first — write table names, columns, and relationships by hand before generating Drizzle code. Have AI review for gaps, not author from scratch.
+
+### Type organization
+
+- DB types come from Drizzle (`.$inferInsert` / `.Select` on tables) — never hand-write DTOs that mirror the schema.
+- API and form types live in `src/lib/types/` — one file per domain (e.g. `src/lib/types/user.ts`, `src/lib/types/order.ts`).
+- Never inline TypeScript interfaces in route files. Import from `src/lib/types/`.
+- If a type is used in exactly one route, it can live in that route's `+page.server.ts` — but the moment a second consumer appears, move it to `src/lib/types/`.
+
+### Validation patterns
+
+- Valibot is the only validation library — it complies with Standard Schema, so any replacement must too. Don't mix libraries or introduce Zod, Yup, or Joi.
+- `src/lib/server/env.ts` validates environment variables at module load — add new vars to its schema.
+- For form validation, create a Valibot schema in `src/lib/types/{domain}.ts` alongside the TypeScript types, and use it with `superForm` or `$form` actions.
+- For API payload validation (in `+server.ts` routes), import the same Valibot schemas from `src/lib/types/`. Never validate inline with manual `typeof` checks.
+
+### Routing conventions
+
+- `(public)/` route group: landing page, login, signup, pricing, blog — anything an unauthenticated user sees.
+- `(authenticated)/` route group: dashboard, settings, profile — requires `locals.user`. The layout loads auth state; redirect to `/login` if missing.
+- `(app)/` route group (optional): main app experience, separate from dashboard if needed.
+- `/(public)/api/` prefix: REST endpoints for webhooks, 3rd-party callbacks, and non-SvelteKit consumers. Use `+server.ts` files.
+- Server actions (`+page.server.ts` actions) for all form mutations done by the SvelteKit UI. Don't create API routes for form submissions.
+- `+page.server.ts` load functions for all data-fetching that requires server context (auth, secrets, DB). Never fetch from the client what the server can provide.
+
+### Auth layout
+
+- Design data ownership into every schema from day one — add `user_id` FKs and auth scope to tables even before login is wired. BetterAuth is the standard auth provider; add it when the project needs login (see README).
+- When you add auth, create these routes under `(public)/`: `/login`, `/signup`, `/forgot-password`.
+- Create `(authenticated)/+layout.svelte` that checks `locals.user` and redirects to `/login` if missing.
+- Don't introduce Lucia, Auth.js, or custom session management.
+
+### Client-server communication
+
+- SvelteKit server actions for form mutations — `<form action="?/create"` pattern, progressive enhancement with `enhance()`.
+- `+page.server.ts` load functions for data reads that need server context (auth, DB).
+- `+server.ts` API routes only for: webhooks, 3rd-party callbacks, and non-browser consumers (mobile apps, CLI tools).
+- Never fetch your own API from the client. Use load functions and actions instead — avoids double-hop latency and keeps auth server-side.
+
+## Folder structure
+
+src/lib/components/ui/ — shadcn-svelte primitives (auto-generated, don't reformat)
+src/lib/components/domain/ — feature-specific Svelte components (e.g., UserCard.svelte, OrderList.svelte)
+src/lib/server/db/ — Drizzle schema, migrations, DB client
+src/lib/server/auth/ — BetterAuth config (add when project needs login)
+src/lib/server/env.ts — validated env vars (Valibot)
+src/lib/types/ — shared TypeScript + Valibot schemas (DB, API, form types)
+src/routes/(public)/ — unauthenticated pages: landing, login, signup
+src/routes/(authenticated)/ — requires auth: dashboard, settings, profile
+src/routes/(public)/api/ — REST endpoints for webhooks and 3rd-party consumers
+
 ## Pre-commit + CI contract
 
 The pre-commit hook runs `lint-staged` (Prettier + ESLint on changed files)
