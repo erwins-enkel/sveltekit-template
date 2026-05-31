@@ -119,10 +119,18 @@ src/routes/(public)/api/ — REST endpoints for webhooks and 3rd-party consumers
 
 ## Pre-commit + CI contract
 
-The pre-commit hook runs `lint-staged` (Prettier + ESLint on changed files)
-followed by a full-project `svelte-check`. CI re-runs lint, check, test,
-and build with a dummy `DATABASE_URL`. If a commit fails the pre-commit
-hook, **fix the issue and create a new commit** — do not `--no-verify`,
+Three Husky hooks, escalating in scope:
+
+- **`commit-msg`** runs `commitlint` (`@commitlint/config-conventional`).
+  A message that isn't a valid Conventional Commit is rejected — this is
+  what keeps release-please's CHANGELOG and version bumps honest.
+- **`pre-commit`** runs `lint-staged` (Prettier + ESLint on changed files)
+  followed by a full-project `svelte-check`. Fast — no test/build.
+- **`pre-push`** runs the full CI-equivalent gate (lint, check, test,
+  build) so failures surface before they cost a CI minute.
+
+CI re-runs lint, check, test, and build with a dummy `DATABASE_URL`. If a
+hook fails, **fix the issue and create a new commit** — do not `--no-verify`,
 do not `--amend` past a hook failure.
 
 ## Common pitfalls

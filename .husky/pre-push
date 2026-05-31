@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Full CI-equivalent gate. Mirrors the `verify` job in .github/workflows/ci.yml
+# so failures surface locally before they ever reach a PR. The pre-commit hook
+# deliberately skips test + build (too slow per commit); this catches them
+# before they cost a CI minute. Slower pushes are the trade.
+set -e
+
+echo "▶ pre-push: lint · check · test · build"
+
+bun run lint
+bun run check
+bun run test
+
+# Build validates the DATABASE_URL *format* only — it never connects. CI passes
+# a dummy; mirror that so a clean checkout can push without real secrets. Uses
+# `build` (not `vercel-build`, which runs db:migrate against a live database).
+DATABASE_URL="${DATABASE_URL:-postgresql://ci:ci@localhost:5432/ci}" bun run build
+
+echo "✓ pre-push passed"
