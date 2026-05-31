@@ -181,6 +181,55 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
 }
 ```
 
+### Adding i18n (Paraglide)
+
+The template ships single-language by default. If a project goes
+multilingual, use [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) —
+compile-time messages, no runtime catalog loading, tree-shakeable.
+
+```bash
+bunx @inlang/paraglide-js@latest init
+# Author messages in messages/<locale>.json (snake_case, component-prefixed
+# keys); import { m } from '$lib/paraglide/messages' and call m.my_key().
+```
+
+**Add a catalog-parity gate.** Paraglide silently falls back to the base
+locale for a missing key, so an incomplete translation ships looking fine.
+Turn that into a hard failure: a small script that asserts every locale
+catalog shares an identical, non-empty key set, wired into CI and
+`.husky/pre-push`.
+
+```js
+// scripts/check-i18n.mjs — fails if locales diverge or have empty values
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const DIR = 'messages';
+const files = readdirSync(DIR).filter((f) => f.endsWith('.json'));
+const keysByLocale = new Map(
+	files.map((f) => [
+		f.replace(/\.json$/, ''),
+		new Set(
+			Object.entries(JSON.parse(readFileSync(join(DIR, f), 'utf8')))
+				.filter(([k]) => k !== '$schema')
+				.map(([k]) => k)
+		)
+	])
+);
+const union = new Set([...keysByLocale.values()].flatMap((s) => [...s]));
+const problems = [...keysByLocale].flatMap(([locale, keys]) =>
+	[...union].filter((k) => !keys.has(k)).map((k) => `${locale}.json missing ${k}`)
+);
+if (problems.length) {
+	console.error('i18n parity failed:\n' + problems.join('\n'));
+	process.exit(1);
+}
+console.log(`✓ i18n: ${keysByLocale.size} locales in parity (${union.size} keys)`);
+```
+
+Hardcoded strings that bypass the catalog entirely aren't caught here — that
+stays on code review. (Pattern lifted from the `tank` project.)
+
 ## Commands
 
 | Command                     | Purpose                                                   |
@@ -213,9 +262,14 @@ See `docs/runbooks/neon-backup-restore.md` for the restore procedure that
 4. `bun run test` — Vitest
 5. `bun run build` — `vite build` with a dummy `DATABASE_URL`
 
-Concurrency cancels superseded runs on the same branch/PR. The Husky
-pre-commit hook (`.husky/pre-commit`) runs `lint-staged` + `svelte-check` so
-typecheck regressions are caught locally before they hit CI.
+Concurrency cancels superseded runs on the same branch/PR. Three Husky hooks
+catch failures locally first:
+
+- `.husky/commit-msg` — `commitlint` rejects any message that isn't a valid
+  Conventional Commit (release-please depends on the format).
+- `.husky/pre-commit` — `lint-staged` + `svelte-check` (fast; no test/build).
+- `.husky/pre-push` — the full CI-equivalent gate (lint, check, test, build)
+  so a red push never reaches a PR.
 
 **Fallow** runs on every PR (`fallow audit --fail-on-issues`) and fails the
 check if the PR introduces new dead code, complexity violations, or unlisted
