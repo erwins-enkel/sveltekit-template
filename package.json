@@ -62,7 +62,7 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.1.0",
-		"@sentry/sveltekit": "^10.56.0",
+		"@sentry/sveltekit": "^10.59.0",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.0.0",
 		"drizzle-orm": "^0.45.0",
