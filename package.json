@@ -68,6 +68,6 @@
 		"drizzle-orm": "^0.45.0",
 		"tailwind-merge": "^3.0.0",
 		"tailwind-variants": "^3.2.2",
-		"valibot": "^1.4.1"
+		"valibot": "^1.4.2"
 	}
 }
