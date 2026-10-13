@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '#lib/components/ui/button/index.js';
 </script>
 
 <main class="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-8">
