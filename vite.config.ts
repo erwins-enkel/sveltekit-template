@@ -1,5 +1,7 @@
 import { sentrySvelteKit } from '@sentry/sveltekit';
+import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
@@ -20,5 +22,33 @@ const sentryPlugins = process.env.SENTRY_AUTH_TOKEN
 
 export default defineConfig({
 	// `sentrySvelteKit()` must come before `sveltekit()`.
-	plugins: [...sentryPlugins, tailwindcss(), sveltekit()]
+	plugins: [
+		...sentryPlugins,
+		tailwindcss(),
+		sveltekit({
+			preprocess: vitePreprocess(),
+
+			compilerOptions: {
+				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
+				runes: ({ filename }) =>
+					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
+			},
+
+			// Keep `$lib` (removed by default in SvelteKit 3 in favour of `#lib`) — shadcn-svelte's
+			// generated components import from it.
+			alias: { $lib: 'src/lib' },
+
+			// Node 22 runtime on Vercel. Change `regions` for your deployment.
+			adapter: adapter({
+				runtime: 'nodejs22.x',
+				regions: ['fra1']
+			}),
+
+			// Enables Sentry server tracing. `src/instrumentation.server.ts` is
+			// picked up automatically.
+			tracing: {
+				server: true
+			}
+		})
+	]
 });

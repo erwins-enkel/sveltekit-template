@@ -1,6 +1,5 @@
-import { sequence } from '@sveltejs/kit/hooks';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { sentryHandle, handleErrorWithSentry } from '@sentry/sveltekit';
-import type { Handle } from '@sveltejs/kit';
 
 /**
  * App request hook. Runs on every request after `sentryHandle()`. The current
