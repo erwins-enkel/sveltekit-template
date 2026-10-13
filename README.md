@@ -130,7 +130,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
-import { db } from '$lib/server/db';
+import { db } from '#lib/server/db/index.js';
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: 'pg' }),
@@ -144,7 +144,7 @@ export const auth = betterAuth({
 // src/hooks.server.ts — replace the no-op handleApp with the BetterAuth handler
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
-import { auth } from '$lib/server/auth';
+import { auth } from '#lib/server/auth.js';
 
 const handleApp: Handle = ({ event, resolve }) =>
 	svelteKitHandler({ event, resolve, auth, building });
@@ -196,7 +196,7 @@ compile-time messages, no runtime catalog loading, tree-shakeable.
 ```bash
 bunx @inlang/paraglide-js@latest init
 # Author messages in messages/<locale>.json (snake_case, component-prefixed
-# keys); import { m } from '$lib/paraglide/messages' and call m.my_key().
+# keys); import { m } from '#lib/paraglide/messages.js' and call m.my_key().
 ```
 
 **Add a catalog-parity gate.** Paraglide silently falls back to the base

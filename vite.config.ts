@@ -34,10 +34,6 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Keep `$lib` (removed by default in SvelteKit 3 in favour of `#lib`) — shadcn-svelte's
-			// generated components import from it.
-			alias: { $lib: 'src/lib' },
-
 			// Node 22 runtime on Vercel. Change `regions` for your deployment.
 			adapter: adapter({
 				runtime: 'nodejs22.x',

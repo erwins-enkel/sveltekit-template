@@ -9,7 +9,7 @@ import { sentryHandle, handleErrorWithSentry } from '@sentry/sveltekit';
  * Auth pattern (BetterAuth is the blessed auth path — see README → "Adding
  * authentication"):
  *
- *   import { auth } from '$lib/server/auth';
+ *   import { auth } from '#lib/server/auth.js';
  *   import { svelteKitHandler } from 'better-auth/svelte-kit';
  *   import { building } from '$app/environment';
  *   const handleAuth: Handle = async ({ event, resolve }) => {
