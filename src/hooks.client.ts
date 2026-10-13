@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/sveltekit';
 import { handleErrorWithSentry } from '@sentry/sveltekit';
-import { env } from '$env/dynamic/public';
+import { PUBLIC_SENTRY_DSN } from '$app/env/public';
 
 /**
  * Client-side Sentry init. Kept minimal — no Session Replay. Enable
@@ -9,7 +9,7 @@ import { env } from '$env/dynamic/public';
  * `PUBLIC_SENTRY_DSN` is optional: unset means the SDK no-ops.
  */
 Sentry.init({
-	dsn: env.PUBLIC_SENTRY_DSN,
+	dsn: PUBLIC_SENTRY_DSN,
 	environment: import.meta.env.MODE,
 	tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
 	// Don't send PII (IP, headers) by default. Flip on if you need it.

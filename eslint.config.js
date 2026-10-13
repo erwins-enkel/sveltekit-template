@@ -3,7 +3,6 @@ import js from '@eslint/js';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import svelteConfig from './svelte.config.js';
 
 export default ts.config(
 	js.configs.recommended,
@@ -28,7 +27,13 @@ export default ts.config(
 				projectService: true,
 				extraFileExtensions: ['.svelte'],
 				parser: ts.parser,
-				svelteConfig
+				// Mirrors `compilerOptions.runes` passed to `sveltekit()` in vite.config.ts.
+				svelteConfig: {
+					compilerOptions: {
+						runes: (/** @type {{ filename: string }} */ { filename }) =>
+							filename.split(/[/\\]/).includes('node_modules') ? undefined : true
+					}
+				}
 			}
 		}
 	},

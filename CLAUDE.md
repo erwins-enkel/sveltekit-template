@@ -9,7 +9,7 @@ changes.
 - **Bun** for local install + script running. The Vercel build itself runs
   on **Node 22** — Bun is dev-only.
 - **SvelteKit 5 only**, runes mode forced for project code (see
-  `svelte.config.js`). Never write Svelte 4 `<script>`-based reactive
+  `sveltekit()` in `vite.config.ts`). Never write Svelte 4 `<script>`-based reactive
   patterns (`$:`, `export let`, stores-as-state). Use `$state`, `$derived`,
   `$effect`, `$props`, `$bindable`.
 - **TypeScript everywhere.** No plain `.js` source files except configs.
@@ -21,7 +21,7 @@ changes.
 - **Drizzle ORM + Neon HTTP driver** for the database. Schema in
   `src/lib/server/db/schema.ts`; migrations generated into `drizzle/`.
 - **Valibot** for runtime validation (env, form input, API payloads). It
-  already backs `src/lib/server/env.ts`. Don't reach for Zod — pick one, and
+  already backs `src/env.ts`. Don't reach for Zod — pick one, and
   this template picked Valibot.
 - **Sentry** (`@sentry/sveltekit`) for error tracking. Init lives in
   `src/instrumentation.server.ts` + `src/hooks.client.ts`; it's a no-op until
@@ -50,10 +50,10 @@ changes.
 - **Server-only code goes under `src/lib/server/`**. SvelteKit refuses to
   bundle anything under that path into the client. Database access, secret
   reads, and provider SDK calls all live there.
-- **Env vars via `$env/dynamic/private`** in server code, never via
-  `process.env` directly. Required server vars belong in
-  `src/lib/server/env.ts`, which validates them with Valibot at module load
-  and throws — fail fast. Add new required vars to that schema.
+- **Env vars via `$app/env/private`** (or `$app/env/public`) — never via
+  `process.env` or the deprecated `$env/*` modules. Every var must be
+  declared in `variables` in `src/env.ts` (SvelteKit's `defineEnvVars`),
+  with a Valibot schema SvelteKit validates at startup — fail fast.
 - **No `console.log` in committed code.** Use a real logger if you need
   structured output; remove debug prints before opening the PR.
 - **All user-facing strings stay in one language** (decide per project).
@@ -78,7 +78,7 @@ changes.
 ### Validation patterns
 
 - Valibot is the only validation library — it complies with Standard Schema, so any replacement must too. Don't mix libraries or introduce Zod, Yup, or Joi.
-- `src/lib/server/env.ts` validates environment variables at module load — add new vars to its schema.
+- `src/env.ts` declares + validates environment variables (SvelteKit validates them at startup) — add new vars there.
 - For form validation, create a Valibot schema in `src/lib/types/{domain}.ts` alongside the TypeScript types, and use it with `superForm` or `$form` actions.
 - For API payload validation (in `+server.ts` routes), import the same Valibot schemas from `src/lib/types/`. Never validate inline with manual `typeof` checks.
 
@@ -111,7 +111,7 @@ src/lib/components/ui/ — shadcn-svelte primitives (auto-generated, don't refor
 src/lib/components/domain/ — feature-specific Svelte components (e.g., UserCard.svelte, OrderList.svelte)
 src/lib/server/db/ — Drizzle schema, migrations, DB client
 src/lib/server/auth/ — BetterAuth config (add when project needs login)
-src/lib/server/env.ts — validated env vars (Valibot)
+src/env.ts — declared + validated env vars (`defineEnvVars` + Valibot)
 src/lib/types/ — shared TypeScript + Valibot schemas (DB, API, form types)
 src/routes/(public)/ — unauthenticated pages: landing, login, signup
 src/routes/(authenticated)/ — requires auth: dashboard, settings, profile

@@ -13,7 +13,7 @@ new projects get the same foundation on day one.
 - **Observability:** `@sentry/sveltekit` wired on server + client — a no-op
   until you set `PUBLIC_SENTRY_DSN`, so it never gets in the way locally.
 - **Validation:** Valibot, already enforcing a fail-fast env contract in
-  `src/lib/server/env.ts`. Reuse it for form input and API payloads.
+  `src/env.ts`. Reuse it for form input and API payloads.
 - **Error page:** a default `src/routes/+error.svelte` so thrown errors render
   a real page instead of the framework fallback.
 - **CI:** `.github/workflows/ci.yml` runs lint → typecheck → test → build on
@@ -156,6 +156,7 @@ Then generate + apply the auth tables, and set the secret:
 bunx @better-auth/cli generate   # writes auth tables into your Drizzle schema
 bun run db:generate && bun run db:migrate
 # .env: BETTER_AUTH_SECRET=$(openssl rand -hex 32), BETTER_AUTH_URL=<app url>
+# and declare both in `variables` in src/env.ts
 ```
 
 ### Adding email (Resend)
@@ -165,11 +166,16 @@ bun add resend
 ```
 
 ```ts
+// src/env.ts — add to `defineEnvVars({ ... })`:
+RESEND_API_KEY: { schema: optional(v.string()) },
+```
+
+```ts
 // src/lib/server/email.ts
 import { Resend } from 'resend';
-import { env } from '$env/dynamic/private';
+import { RESEND_API_KEY } from '$app/env/private';
 
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 export async function sendEmail(opts: { to: string; subject: string; html: string }) {
 	if (!resend) {
@@ -351,10 +357,10 @@ src/
 ├── instrumentation.server.ts # Sentry server init (no-op without a DSN)
 ├── hooks.server.ts          # sentryHandle + pass-through; add auth here
 ├── hooks.client.ts          # Sentry client init
+├── env.ts                   # Valibot-validated env vars (fail-fast at startup)
 ├── lib/
 │   ├── components/ui/       # shadcn-svelte components (Button installed)
 │   ├── server/
-│   │   ├── env.ts           # Valibot-validated env (fail-fast at load)
 │   │   └── db/
 │   │       ├── index.ts     # Drizzle client (Neon HTTP driver)
 │   │       └── schema.ts    # Empty — add your tables here

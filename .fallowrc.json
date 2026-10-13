@@ -13,7 +13,6 @@
 		"src/lib/server/db/index.ts",
 		"src/lib/utils.ts",
 		"vite.config.ts",
-		"svelte.config.js",
 		"drizzle.config.ts",
 		"vitest.config.ts",
 		"vitest.setup.ts",
