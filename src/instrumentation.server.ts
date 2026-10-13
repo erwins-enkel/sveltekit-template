@@ -13,5 +13,6 @@ Sentry.init({
 	environment: import.meta.env.MODE,
 	// 100% locally, sample down in production.
 	tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
-	enableLogs: true
+	// Don't send PII (IP, cookies, headers) by default. Flip on if you need it.
+	dataCollection: { userInfo: false, cookies: false, httpHeaders: false }
 });

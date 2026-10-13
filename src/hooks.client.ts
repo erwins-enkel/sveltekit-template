@@ -12,9 +12,8 @@ Sentry.init({
 	dsn: PUBLIC_SENTRY_DSN,
 	environment: import.meta.env.MODE,
 	tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
-	// Don't send PII (IP, headers) by default. Flip on if you need it.
-	sendDefaultPii: false,
-	enableLogs: true
+	// Don't send PII (IP, cookies, headers) by default. Flip on if you need it.
+	dataCollection: { userInfo: false, cookies: false, httpHeaders: false }
 });
 
 export const handleError = handleErrorWithSentry();

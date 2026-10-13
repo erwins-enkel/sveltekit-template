@@ -1,4 +1,4 @@
-import { sentrySvelteKit } from '@sentry/sveltekit';
+import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
@@ -11,11 +11,9 @@ import { defineConfig } from 'vite';
 const sentryPlugins = process.env.SENTRY_AUTH_TOKEN
 	? [
 			sentrySvelteKit({
-				sourceMapsUploadOptions: {
-					org: process.env.SENTRY_ORG,
-					project: process.env.SENTRY_PROJECT,
-					authToken: process.env.SENTRY_AUTH_TOKEN
-				}
+				org: process.env.SENTRY_ORG,
+				project: process.env.SENTRY_PROJECT,
+				authToken: process.env.SENTRY_AUTH_TOKEN
 			})
 		]
 	: [];
