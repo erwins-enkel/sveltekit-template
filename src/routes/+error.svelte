@@ -10,7 +10,8 @@
 		<h1 class="text-xl font-semibold">
 			{page.error?.message ?? 'Something went wrong'}
 		</h1>
-		<a href={resolve('/')} class="inline-block text-sm underline underline-offset-4">Back to home</a
-		>
+		<a href={resolve('/')} class="inline-block text-sm underline underline-offset-4">
+			Back to home
+		</a>
 	</div>
 </main>
